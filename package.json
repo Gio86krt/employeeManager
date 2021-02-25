@@ -1,0 +1,16 @@
+{
+  "name": "employeemanager",
+  "version": "1.0.0",
+  "description": "Useful application to manage employees data",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Giovanni Orlando",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "inquirer": "^7.3.3",
+    "mysql": "^2.18.1"
+  }
+}
