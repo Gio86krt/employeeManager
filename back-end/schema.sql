@@ -24,8 +24,8 @@ create table _role (
 
 
  insert into eployees (firstname, lastname, roleid, managerid) values ("Frank","Castle", 1,1);   --(select from _role where title="Manager" and )
- insert into eployees (firstname, lastname, roleid, managerid) values ("Steve","Rogers", 1,2);
- insert into eployees (firstname, lastname, roleid, managerid) values ("Tony","Stark", 1,1);
+ insert into eployees (firstname, lastname, roleid, managerid) values ("Steve","Rogers", 3,8);
+ insert into eployees (firstname, lastname, roleid, managerid) values ("Tony","Stark", 2,1);
  insert into eployees (firstname, lastname, roleid, managerid) values ("Thor","Godofthunder", 1,2);
  insert into eployees (firstname, lastname, roleid, managerid) values ("Wade","Wilson", 4,2);
  insert into eployees (firstname, lastname, roleid, managerid) values ("Scarlett","Johansonn", 1,null);
