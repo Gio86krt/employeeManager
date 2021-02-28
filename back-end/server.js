@@ -30,10 +30,10 @@ async function getStarted() {
       // console.log(res.action);
       switch (res.action) {
         case "SEARCH DATA":
-          ormSearch();
+          ormSearch.searchData();
           break;
         case "UPDATE DATA":
-          ormUpdate();
+          ormUpdate.updateData();
           break;
       }
     }));
