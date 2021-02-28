@@ -1,5 +1,8 @@
-const inquirer = require("inquirer");
 const mysql = require("mysql");
+const inquirer = require("inquirer");
+const ormSearch = require("./ormSearch.js");
+const starter = require("./starter");
+// const showAllEmployees = ormSearch.showAllEmployees;
 
 const db = require("../back-end/connection")(
   "employees_db",
@@ -13,7 +16,6 @@ async function getDept() {
       departments.push(res[i].departmentname);
     }
   });
-  //   console.log(departments);
   return departments;
 }
 
@@ -64,7 +66,7 @@ async function updateData() {
                   break;
                 case "Department":
                   //////////
-                  let departments = getDept();
+                  let departments = await getDept();
                   inquirer
                     .prompt({
                       message: "Select Department: ",
@@ -78,7 +80,7 @@ async function updateData() {
                     });
                   break;
                 case "Role":
-                  const roles = getRoles();
+                  const roles = await getRoles();
                   inquirer
                     .prompt({
                       message: "Select a role: ",
@@ -106,19 +108,64 @@ async function updateData() {
             .then(async (res) => {
               switch (res.update) {
                 case "Employee info":
+                  /////look for an employee
+                  const employee = await inquirer
+                    .prompt({
+                      message: "Insert name:",
+                      type: "input",
+                      name: "name",
+                    })
+                    .then(async (res) => {
+                      const [name, lastName] = res.name.split(" ");
+                      console.log(name, lastName);
+                      if (!lastName) {
+                        const [result] = await db.query(
+                          `select * from employees where firstname LIKE "%${name}%";`
+                        );
+                        return result;
+                      } else {
+                        const [result] = await db.query(
+                          `select * from employees where firstname LIKE "%${name}%" AND lastname LIKE "%${lastName}%";`
+                        );
+                        return result;
+                      }
+                    })
+                    .then(async (res) => {
+                      //   console.log(res, "  RES");
+                      if (res === undefined) {
+                        console.log(`Employee not found!`);
+                        // newSearch();
+                      } else {
+                        console.table(res);
+                        // newSearch();
+                        return res;
+                      }
+                    })
+                    .catch((err) => console.log(`Employee not found!`));
+
+                  //   console.log(employee);
+                  //////change stuff
                   inquirer
                     .prompt({
                       message: `Insert field and new value (Example:  firstname "John"): `,
                       type: "input",
                       name: "input",
                     })
-                    .then((res) => {
-                      res.input.split(" ");
-                      updateEntry("employees");
+                    .then(async (res) => {
+                      const [col, newValue] = res.input.split(" ");
+                      //   console.log(col, " COL", newValue, "  NEW");
+                      let [oldValue] = await db.query(
+                        `SELECT ${col} FROM employees WHERE id=${employee.id}`
+                      );
+
+                      oldValue = eval(`${`oldValue.` + col}`);
+                      //   console.log(oldValue, "   OLDVALUE");
+                      updateEntry("employees", col, oldValue, newValue);
                     });
                   break;
                 case "Department":
                   //////////update department info
+                  let department;
                   let departments = await getDept();
                   console.log(departments, "   UPDATE FUNC");
                   inquirer
@@ -128,10 +175,66 @@ async function updateData() {
                       name: "department",
                       choices: [...departments],
                     })
-                    .then((res) => console.log(res.department));
+                    .then((res) => {
+                      department = res.department;
+                      inquirer
+                        .prompt({
+                          message: "Insert New Department Name:",
+                          type: "input",
+                          name: "newname",
+                        })
+                        .then(async (res) => {
+                          //   console.log(res);
+                          //   console.log(department);
+                          const result = await db.query(
+                            `UPDATE department SET departmentname="${res.newname}" WHERE departmentname="${department}";`
+                          );
+                          console.table(result);
+                        });
+                    });
                   break;
                 case "Roles":
-                  const roles = getRoles();
+                  let role;
+                  const roles = await getRoles();
+                  const selection = await inquirer
+                    .prompt({
+                      message: "Select role: ",
+                      type: "rawlist",
+                      name: "role",
+                      choices: [...roles],
+                    })
+                    .then((res) => (role = res.role));
+                  //   console.log(role);
+
+                  const search = await db
+                    .query(`SELECT * FROM _role WHERE title="${selection}";`)
+                    .then((res) => console.table(res));
+
+                  inquirer
+                    .prompt({
+                      message:
+                        "Insert Field and New Value (Example title Director):",
+                      type: "input",
+                      name: "newtitle",
+                    })
+                    .then(async (res) => {
+                      //   console.log(res, "  RES");
+                      let [col, newValue] = res.newtitle.split(" ");
+                      //   if (eval(newValue) === Number) newValue *= 1;
+                      //   console.log(col, "  COL ", newValue, "   NEWVALUE");
+                      /////////////
+                      console.log(role);
+                      console.log(col);
+                      console.log(newValue);
+                      let [oldValue] = await db.query(
+                        `SELECT ${col} FROM _role WHERE title="${role}";`
+                      );
+                      console.log(oldValue);
+                      oldValue = eval(`${`oldValue.` + col}`);
+                      updateEntry("_role", col, oldValue, newValue);
+                      console.table(res);
+                    });
+
                   break;
               }
             });
@@ -144,8 +247,9 @@ async function updateData() {
 
 const updateEntry = async (table, col, oldValue, newValue) => {
   const result = await db.query(
-    `UPDATE ${table} SET ${col}=${newValue} WHERE ${col}=${oldValue};`
+    `UPDATE ${table} SET ${col}="${newValue}" WHERE ${col}="${oldValue}";`
   );
+  console.table(result);
   return result;
 };
 
@@ -164,11 +268,15 @@ const deleteStuff = async (table, input) => {
           .query(`DELETE FROM ${table} WHERE ${input};`)
           .then((res) => {
             console.log(`Entry deleted`);
-            setTimeout(() => getStarted(), 3000);
+            setTimeout(() => starter(), 3000);
           });
         return;
-      } else getStarted();
+      } else starter();
     });
 };
 
-module.exports = updateData;
+module.exports = {
+  updateData: updateData,
+  getRoles: getRoles,
+  getDept: getDept,
+};
