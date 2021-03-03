@@ -1,13 +1,11 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-const ormSearch = require("./ormSearch.js");
-const starter = require("./starter");
+let ormSearch;
+let newSearch;
+let starter;
 // const showAllEmployees = ormSearch.showAllEmployees;
 
-const db = require("../back-end/connection")(
-  "employees_db",
-  "mySQL86kyokushin"
-);
+const db = require("../back-end/connection")("employees_db", "mySQL86giovanni");
 
 async function getDept() {
   let departments = [];
@@ -30,6 +28,9 @@ async function getRoles() {
 }
 
 async function updateData() {
+  starter = require("../starter/starter");
+  ormSearch = require("./ormSearch.js");
+  newSearch = ormSearch.newSearch;
   inquirer
     .prompt({
       message: "Please select an action: ",
@@ -77,7 +78,8 @@ async function updateData() {
                     .then((res) => {
                       let input = `departmentname="${res.department}"`;
                       deleteStuff("department", input);
-                    });
+                    })
+                    .then((res) => newSearch());
                   break;
                 case "Role":
                   const roles = await getRoles();
@@ -92,7 +94,8 @@ async function updateData() {
                       console.log(res.role);
                       let input = `title="${res.role}"`;
                       deleteStuff("_role", input);
-                    });
+                    })
+                    .then((res) => newSearch());
                   break;
               }
             });
@@ -134,16 +137,15 @@ async function updateData() {
                       //   console.log(res, "  RES");
                       if (res === undefined) {
                         console.log(`Employee not found!`);
-                        // newSearch();
+                        newSearch();
                       } else {
                         console.table(res);
-                        // newSearch();
                         return res;
                       }
                     })
                     .catch((err) => console.log(`Employee not found!`));
 
-                  //   console.log(employee);
+                  // console.log(employee);
                   //////change stuff
                   inquirer
                     .prompt({
@@ -161,7 +163,8 @@ async function updateData() {
                       oldValue = eval(`${`oldValue.` + col}`);
                       //   console.log(oldValue, "   OLDVALUE");
                       updateEntry("employees", col, oldValue, newValue);
-                    });
+                    })
+                    .then((res) => newSearch());
                   break;
                 case "Department":
                   //////////update department info
@@ -190,8 +193,10 @@ async function updateData() {
                             `UPDATE department SET departmentname="${res.newname}" WHERE departmentname="${department}";`
                           );
                           console.table(result);
-                        });
+                        })
+                        .then((res) => newSearch());
                     });
+
                   break;
                 case "Roles":
                   let role;
@@ -223,23 +228,59 @@ async function updateData() {
                       //   if (eval(newValue) === Number) newValue *= 1;
                       //   console.log(col, "  COL ", newValue, "   NEWVALUE");
                       /////////////
-                      console.log(role);
-                      console.log(col);
-                      console.log(newValue);
+                      // console.log(role);
+                      // console.log(col);
+                      // console.log(newValue);
                       let [oldValue] = await db.query(
                         `SELECT ${col} FROM _role WHERE title="${role}";`
                       );
-                      console.log(oldValue);
+                      // console.log(oldValue);
                       oldValue = eval(`${`oldValue.` + col}`);
                       updateEntry("_role", col, oldValue, newValue);
                       console.table(res);
-                    });
+                    })
+                    .then((res) => newSearch());
 
                   break;
               }
             });
           break;
         case "ADD":
+          ///////////INSERT INTO table (col1, col2) VALUES (val1, val2)///////////////
+          //inquirer: do you want to add: employee, department, role//////////////////
+          inquirer
+            .prompt({
+              message: "Select option:",
+              type: "rawlist",
+              choices: ["ADD an Employee", "ADD a Department", "ADD a Role"],
+              name: "option",
+            })
+            .then(async (res) => {
+              switch (res.option) {
+                case "ADD an Employee":
+                  const departments = await getDept();
+                  inquirer
+                    .prompt({
+                      message: "Select department:",
+                      type: "rawlist",
+                      choices: [...departments],
+                      name: "dept",
+                    })
+                    .then(async (res) => {
+                      const managerid = await db.query(
+                        `SELECT lastname FROM employees `
+                      );
+                    });
+                  break;
+                case "ADD an Department":
+                  break;
+                case "ADD an Role":
+                  break;
+              }
+            });
+
+          ///switch statement
+          //db.query(hardcode table name) similar to update for col and value
           break;
       }
     });
@@ -268,15 +309,15 @@ const deleteStuff = async (table, input) => {
           .query(`DELETE FROM ${table} WHERE ${input};`)
           .then((res) => {
             console.log(`Entry deleted`);
-            setTimeout(() => starter(), 3000);
+            setTimeout(() => newSearch(), 3000);
           });
         return;
-      } else starter();
+      } else newSearch();
     });
 };
 
 module.exports = {
-  updateData: updateData,
-  getRoles: getRoles,
-  getDept: getDept,
+  updateData,
+  getRoles,
+  getDept,
 };

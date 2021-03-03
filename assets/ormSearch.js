@@ -1,17 +1,15 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 const { restoreDefaultPrompts } = require("inquirer");
-const starter = require("./starter");
+let starter;
 const ormUpdate = require("./ormUpdate");
 const getRoles = ormUpdate.getRoles;
 const getDept = ormUpdate.getDept;
 
-const db = require("../back-end/connection")(
-  "employees_db",
-  "mySQL86kyokushin"
-);
+const db = require("../back-end/connection")("employees_db", "mySQL86giovanni");
 
 function newSearch() {
+  starter = require("../starter/starter");
   inquirer
     .prompt({
       message: "Keep working?",
@@ -25,7 +23,9 @@ function newSearch() {
           starter();
           break;
         case "NO":
-          /////close server
+          setImmediate(function () {
+            process.exit();
+          });
           break;
       }
     });
@@ -37,21 +37,33 @@ async function showAllEmployees() {
     .then((res) => {
       console.table(res);
       ////////////////should also be showing dapartment and id
-    });
+    })
+    .then((res) => newSearch());
 }
 
 async function getManagers() {
   const managers = [];
-  const result = await db
-    .query(
-      `SELECT * FROM employees WHERE roleid = (select id from _role where title="Manager");`
-    )
+  const ids = await db
+    .query(`SELECT id FROM _role WHERE title="Manager"`)
     .then((res) => {
-      res.forEach((el) => {
-        managers.push(`${el.firstname} ${el.lastname}`);
+      // console.log(res, "   IDS");
+      // console.log(ids);
+      res.forEach(async (el) => {
+        // console.log(el.id, "  EL.ID");
+        await db
+          .query(`SELECT * FROM employees WHERE roleid=${el.id};`)
+          .then((res) => {
+            console.log(res, "  RES inner");
+            res.forEach((el) => {
+              managers.push(`${el.firstname} ${el.lastname}`);
+            });
+            return managers;
+          });
+        return managers;
       });
+      console.log(managers, "   MANAGERS middle");
+      return managers;
     });
-  return managers;
 }
 
 async function searchData() {
@@ -75,21 +87,28 @@ async function searchData() {
               choices: [...roles],
             })
             .then(async (res) => {
-              // console.log(res.role, "RES.ROLE");
+              let results = [];
+
               const result = await db.query(
                 `SELECT id FROM _role WHERE title='${res.role}';`
               );
-              // console.log(result[0].id, "  RESULT INNER");
-              return result[0].id;
+              result.forEach(async (el) => {
+                let person = await db.query(
+                  `SELECT * FROM employees WHERE roleid='${el.id}';`
+                );
+                [person] = person;
+                results.push(person);
+                console.table(person); ////////////shows one table for every person
+              });
+              // console.table(results);
+              return results;
             })
-            .then(async (res) => {
-              return await db
-                .query(`SELECT * FROM employees WHERE roleid='${res}';`)
-                .then((res) => {
-                  console.table(res);
-                  // newSearch();
-                });
+            .then((res) => {
+              ///////////////////empty array
+              console.log(res);
+              // console.table(res);
             })
+            .then((res) => newSearch())
             .catch((err) => console.log(`Role not found!`));
           break;
         ////////////////////////this works!!!
@@ -105,13 +124,14 @@ async function searchData() {
             .then((res) => {
               console.log(res.dept);
               db.query(
-                `select * from employees where managerid = (select id from _role where title="Manager" AND department_id=${
+                `select * from employees where managerid = (select id from _role where title="Manager" AND departmentid=${
                   departments.indexOf(res.dept) + 1
                 }); `
-              ).then((res) => {
-                console.table(res);
-                // newSearch();
-              });
+              )
+                .then((res) => {
+                  console.table(res);
+                })
+                .then((res) => newSearch());
             })
             .catch((err) => console.log(`Department not found!`));
           break;
@@ -142,12 +162,12 @@ async function searchData() {
               // console.log(res, "  RES");
               if (res === undefined) {
                 console.log(`Employee not found!`);
-                // newSearch();
+                newSearch();
               } else {
                 console.table(res);
-                // newSearch();
               }
             })
+            .then((res) => newSearch())
             .catch((err) => console.log(`Employee not found!`));
           break;
         case "Manager":
@@ -171,19 +191,20 @@ async function searchData() {
             )
             .then((res) => {
               console.table(res);
-              // newSearch();
             })
+            .then((res) => newSearch())
             .catch((err) => console.log(`Not found!`));
           break;
         case "Show all Employees":
           showAllEmployees();
-          // newSearch();
+
           break;
       }
     });
 }
 
 module.exports = {
-  searchData: searchData,
-  showAllEmployees: showAllEmployees,
+  searchData,
+  showAllEmployees,
+  newSearch,
 };

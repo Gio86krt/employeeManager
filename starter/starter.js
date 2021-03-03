@@ -1,11 +1,10 @@
 const inquirer = require("inquirer");
-const ormSearch = require("./ormSearch");
-const ormUpdate = require("./ormUpdate");
+const express = require("express");
+const app = express();
+const ormSearch = require("../assets/ormSearch");
+const ormUpdate = require("../assets/ormUpdate");
 
-const db = require("../back-end/connection")(
-  "employees_db",
-  "mySQL86kyokushin"
-);
+const db = require("../back-end/connection")("employees_db", "mySQL86giovanni");
 
 async function getStarted() {
   //welcomeMessage();
