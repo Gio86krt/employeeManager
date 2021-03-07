@@ -49,7 +49,7 @@ n/a
 
 #### Contacts:
 
-For questions and collaborations contact me at: [lugk4l@gmail.com](mailto:lugk4l@gmail.com);
+For questions and collaborations contact me at: [webdevgiova86@gmail.com](mailto:webdevgiova86@gmail.com);
 Or check my [GitHub](https://github.com/Gio86krt)
 
-[Page-Link](https://gio86krt.github.io/teamProfile/)\
+[Page-Link](https://gio86krt.github.io/employeeManager/)\

@@ -50,7 +50,7 @@ async function getManagers() {
     .then((res) => {
       res.forEach(async (el) => {
         const person = await db.query(
-          `SELECT firstname, lastname FROM employees WHERE roleid=${el.id};`
+          `SELECT firstname, lastname FROM employees WHERE managerid=${el.id};`
         );
         console.log(person);
       });

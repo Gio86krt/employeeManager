@@ -60,8 +60,13 @@ async function updateData() {
                       type: "input",
                       name: "fired",
                     })
-                    .then((res) => {
+                    .then(async (res) => {
                       const [name, lastname] = res.fired.split(" ");
+                      await db
+                        .query(
+                          `SELECT * FROM employees WHERE firstname="${name}" AND lastname="${lastname}";`
+                        )
+                        .then((res) => console.table(res));
                       let input = `firstname="${name}" AND lastname="${lastname}"`;
                       deleteStuff("employees", input);
                     });
@@ -224,14 +229,7 @@ async function updateData() {
                       name: "newtitle",
                     })
                     .then(async (res) => {
-                      //   console.log(res, "  RES");
                       let [col, newValue] = res.newtitle.split(" ");
-                      //   if (eval(newValue) === Number) newValue *= 1;
-                      //   console.log(col, "  COL ", newValue, "   NEWVALUE");
-                      /////////////
-                      // console.log(role);
-                      // console.log(col);
-                      // console.log(newValue);
                       let [oldValue] = await db.query(
                         `SELECT ${col} FROM _role WHERE title="${role}";`
                       );
@@ -303,7 +301,7 @@ async function updateData() {
                               console.log(input);
                               // console.log(managers.id);
                               await db.query(
-                                `INSERT INTO employees (firstname, lastname, roleid, managerid) VALUES (${input})`
+                                `INSERT INTO employees (firstname, lastname, roleid, managerid) VALUES (${input});`
                               );
                               console.log("New Employee inserted.");
                             })
@@ -311,19 +309,17 @@ async function updateData() {
                         });
                     });
                   break;
-                case "ADD an Department":
-                  const departments = await getDept();
+                case "ADD a Department":
                   inquirer
                     .prompt({
-                      message: "Select Department: ",
-                      choices: [...departments],
-                      type: "list",
+                      message: "Insert new Daprtment name: ",
+                      type: "input",
                       name: "dept",
                     })
                     .then(async (res) => {
                       await db
                         .query(
-                          `INSERT INTO _role departmentname VALUES (${res.dept})`
+                          `INSERT INTO department (departmentname) VALUES ("${res.dept}");`
                         )
                         .then((res) => {
                           console.log("New Department created");
@@ -331,10 +327,34 @@ async function updateData() {
                         });
                     });
                   break;
-                case "ADD an Role":
-                  inquirer.prompt({
-                    message: "Insert ",
-                  });
+                case "ADD a Role":
+                  const departmentsList = await getDept();
+                  let id;
+                  console.log(departmentsList);
+                  inquirer
+                    .prompt({
+                      message: "Select Department: ",
+                      choices: [...departmentsList],
+                      type: "list",
+                      name: "dept",
+                    })
+                    .then((res) => {
+                      id = eval(departmentsList.indexOf(res.dept) + 1);
+                      inquirer
+                        .prompt({
+                          message: "Insert New Title and Salary: ",
+                          type: "input",
+                          name: "new",
+                        })
+                        .then(async (res) => {
+                          let str = res.new.replace(" ", '",');
+                          await db.query(
+                            `INSERT INTO _role (title, salary, departmentid) VALUES ("${str},${id});`
+                          );
+                          console.log("New Role insterted");
+                        })
+                        .then((res) => newSearch());
+                    });
                   break;
               }
             });
