@@ -11,7 +11,7 @@ async function getStarted() {
   return (result = await inquirer
     .prompt({
       message: "What would you like to do today?",
-      type: "rawlist",
+      type: "list",
       choices: ["SEARCH DATA", "UPDATE DATA"],
       name: "action",
     })

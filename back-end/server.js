@@ -1,6 +1,6 @@
 const sql = require("mysql");
 const express = require("express");
-// const inquirer = require("inquirer");
+const inquirer = require("inquirer");
 const starter = require("../starter/starter");
 const { CLIENT_RENEG_LIMIT } = require("tls");
 const { restoreDefaultPrompts } = require("inquirer");

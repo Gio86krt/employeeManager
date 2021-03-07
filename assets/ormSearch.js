@@ -3,6 +3,7 @@ const mysql = require("mysql");
 const { restoreDefaultPrompts } = require("inquirer");
 let starter;
 const ormUpdate = require("./ormUpdate");
+const PasswordPrompt = require("inquirer/lib/prompts/password");
 const getRoles = ormUpdate.getRoles;
 const getDept = ormUpdate.getDept;
 
@@ -42,27 +43,17 @@ async function showAllEmployees() {
 }
 
 async function getManagers() {
-  const managers = [];
+  /////////////////////////////////////////////NOT WORKING NOT WORKING NOT WORKING
+  let managers = [];
   const ids = await db
     .query(`SELECT id FROM _role WHERE title="Manager"`)
     .then((res) => {
-      // console.log(res, "   IDS");
-      // console.log(ids);
       res.forEach(async (el) => {
-        // console.log(el.id, "  EL.ID");
-        await db
-          .query(`SELECT * FROM employees WHERE roleid=${el.id};`)
-          .then((res) => {
-            console.log(res, "  RES inner");
-            res.forEach((el) => {
-              managers.push(`${el.firstname} ${el.lastname}`);
-            });
-            return managers;
-          });
-        return managers;
+        const person = await db.query(
+          `SELECT firstname, lastname FROM employees WHERE roleid=${el.id};`
+        );
+        console.log(person);
       });
-      console.log(managers, "   MANAGERS middle");
-      return managers;
     });
 }
 
@@ -172,6 +163,7 @@ async function searchData() {
           break;
         case "Manager":
           const managers = await getManagers();
+          console.log(`managers ${managers}`);
           const manager = await inquirer
             .prompt({
               message: "Select Manager",

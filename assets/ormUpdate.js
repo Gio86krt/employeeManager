@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const Choice = require("inquirer/lib/objects/choice");
 let ormSearch;
 let newSearch;
 let starter;
@@ -258,23 +259,82 @@ async function updateData() {
             .then(async (res) => {
               switch (res.option) {
                 case "ADD an Employee":
+                  let input = "";
                   const departments = await getDept();
+                  const roles = await getRoles();
                   inquirer
                     .prompt({
-                      message: "Select department:",
-                      type: "rawlist",
-                      choices: [...departments],
-                      name: "dept",
+                      message: "Insert new employee NAME, LASTNAME",
+                      type: "input",
+                      name: "new",
                     })
                     .then(async (res) => {
-                      const managerid = await db.query(
-                        `SELECT lastname FROM employees `
-                      );
+                      input += `"${res.new.trim().replace(" ", '","')}"`;
+                      // console.log(input);
+                      inquirer
+                        .prompt({
+                          message: "Select role: ",
+                          type: "list",
+                          choices: [...roles],
+                          name: "role",
+                        })
+                        .then(async (res) => {
+                          // console.log(res.role);
+                          input =
+                            input + " " + eval(roles.indexOf(res.role) + 1);
+                          // console.log(input);
+                        })
+                        .then((res) => {
+                          inquirer
+                            .prompt({
+                              message: "Select Department: ",
+                              choices: [...departments],
+                              type: "list",
+                              name: "dept",
+                            })
+                            .then(async (res) => {
+                              let [managers] = await db.query(
+                                `SELECT id FROM employees WHERE roleid=${eval(
+                                  departments.indexOf(res.dept) + 1
+                                )};`
+                              );
+                              input += ` ${managers.id}`;
+                              input = input.replace(/ /gi, ",");
+                              console.log(input);
+                              // console.log(managers.id);
+                              await db.query(
+                                `INSERT INTO employees (firstname, lastname, roleid, managerid) VALUES (${input})`
+                              );
+                              console.log("New Employee inserted.");
+                            })
+                            .then((res) => newSearch());
+                        });
                     });
                   break;
                 case "ADD an Department":
+                  const departments = await getDept();
+                  inquirer
+                    .prompt({
+                      message: "Select Department: ",
+                      choices: [...departments],
+                      type: "list",
+                      name: "dept",
+                    })
+                    .then(async (res) => {
+                      await db
+                        .query(
+                          `INSERT INTO _role departmentname VALUES (${res.dept})`
+                        )
+                        .then((res) => {
+                          console.log("New Department created");
+                          newSearch();
+                        });
+                    });
                   break;
                 case "ADD an Role":
+                  inquirer.prompt({
+                    message: "Insert ",
+                  });
                   break;
               }
             });
